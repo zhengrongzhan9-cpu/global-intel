@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from intel.bark import Bark
 from intel.cluster import build_clusters, merge_clusters
-from intel.llm import clean_brief, fallback_brief
+from intel.llm import _events_payload, clean_brief, fallback_brief
 from intel.render import digest_messages, hourly_messages
 from intel.run import _duplicate_selected, _is_major_update
 from intel.util import canon_url, norm_title, similarity
@@ -174,9 +174,17 @@ def test_bark_payload():
     assert payload["group"] == "GlobalIntel"
 
 
+
+def test_events_payload():
+    assert _events_payload({"events": [1]}) == {"events": [1]}
+    assert _events_payload([{"id": 1}]) == {"events": [{"id": 1}]}
+    assert _events_payload(None) is None
+    assert _events_payload({"foo": 1}) is None
+
+
 def main():
     tests = [test_url, test_title, test_cluster, test_brief, test_fallback, test_render, test_bark_parse,
-             test_major_update, test_intra_digest_dedup, test_digest_message, test_bark_payload]
+             test_major_update, test_intra_digest_dedup, test_digest_message, test_bark_payload, test_events_payload]
     for test in tests:
         test()
         print(f"OK {test.__name__}")

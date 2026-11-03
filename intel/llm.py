@@ -59,6 +59,15 @@ OVERVIEW_PROMPT = """今天是 {date}。以下是过去 24 小时全球情报中
 请用中文写 3 条「今日主线」，每条不超过 40 个汉字，只写事实性概括与市场含义，不预测点位、不编造数据。输出 JSON：{{"lines":["","",""]}}"""
 
 
+def _events_payload(data):
+    """模型有时返回裸数组，统一成 {"events": [...]}；非法结构返回 None。"""
+    if isinstance(data, list):
+        return {"events": data}
+    if isinstance(data, dict) and isinstance(data.get("events"), list):
+        return data
+    return None
+
+
 class LLM:
     def __init__(
         self,
@@ -148,11 +157,11 @@ class LLM:
                     {"role": "user", "content": prompt},
                 ]
             )
-            data = extract_json(content)
-            if not data or not isinstance(data.get("events"), list):
+            payload = _events_payload(extract_json(content))
+            if not payload:
                 log.warning("LLM 返回无法解析，改用规则简报")
                 continue
-            for raw in data["events"]:
+            for raw in payload["events"]:
                 ids = raw.get("ids")
                 if not isinstance(ids, list):
                     ids = [raw.get("id")]

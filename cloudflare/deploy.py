@@ -96,7 +96,7 @@ def main() -> int:
     sched = requests.put(
         f"{BASE}/accounts/{account_id}/workers/scripts/{SCRIPT}/schedules",
         headers=headers(token),
-        json={"crons": CRONS},
+        json=[{"cron": cron} for cron in CRONS],
         timeout=30,
     )
     check(sched, "设置 Cron Triggers")
@@ -119,7 +119,10 @@ def main() -> int:
             sub = candidate
     if not sub:
         print("警告：未配置 workers.dev 子域，无法做公网健康检查", file=sys.stderr)
-        print("TRIGGER_KEY=" + trigger_key)
+        key_file = ROOT.parent / "data" / "cf_trigger_key.txt"
+        key_file.parent.mkdir(parents=True, exist_ok=True)
+        key_file.write_text(trigger_key, encoding="utf-8")
+        print("TRIGGER_KEY_FILE=" + str(key_file))
         return 0
 
     # 尝试开启 workers.dev（部分账号默认已开）
@@ -131,10 +134,13 @@ def main() -> int:
     )
 
     url = f"https://{SCRIPT}.{sub}.workers.dev"
+    key_file = ROOT.parent / "data" / "cf_trigger_key.txt"
+    key_file.parent.mkdir(parents=True, exist_ok=True)
+    key_file.write_text(trigger_key, encoding="utf-8")
     print("Worker URL:", url)
     print("HEALTH_URL=" + url + "/health")
     print("TRIGGER_URL=" + url + "/trigger")
-    print("TRIGGER_KEY=" + trigger_key)
+    print("TRIGGER_KEY_FILE=" + str(key_file))
     return 0
 
 
