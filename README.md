@@ -114,6 +114,7 @@ python -m intel.run --test-push
 - **RSS 可达性**：本机实测 28/29 可用；`mining.com` 返回 403，已保留但不会致命。部分站点（Reuters 旧域名、IMF、ACLED）不可用，已用替代源。
 - **Actions 延迟**：整点扫描实际在 :07–:22 之间启动；早晚报可能晚于 08:30/20:30 几分钟。
 - **无 AI Key 时**为规则模式，只推送 ≥7.5 分事件，简报不带中文翻译与背景。
+- **Actions 停用风险**：GitHub 对公开仓库连续 60 天无提交会自动停用 schedule。仓库内置 `Heartbeat` 工作流，每月自动提交一次心跳规避。
 - **GPL-3.0**：`vendor/TrendRadar` 为 GPL-3.0，本仓库整体按 GPL-3.0 分发，保留上游版权声明。
 
 ## 故障排查
