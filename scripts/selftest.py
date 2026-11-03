@@ -137,9 +137,46 @@ def test_digest_message():
     assert len(messages[0][1].encode("utf-8")) < 3400
 
 
+
+def test_bark_payload():
+    """Bark 的 markdown 字段会覆盖 body，必须确保不再发送该字段。"""
+    import intel.bark as bark_mod
+
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        content = b'{"code":200}'
+        text = '{"code":200}'
+
+        def json(self):
+            return {"code": 200}
+
+    def fake_post(url, json=None, timeout=None, **kwargs):
+        captured["url"] = url
+        captured["json"] = json
+        return FakeResponse()
+
+    original = bark_mod.requests.post
+    bark_mod.requests.post = fake_post
+    try:
+        ok = Bark("https://api.day.app/abc123").send(
+            "测试标题", "完整中文正文\n第二行链接 https://example.com", "active"
+        )
+    finally:
+        bark_mod.requests.post = original
+
+    assert ok is True
+    payload = captured["json"]
+    assert "markdown" not in payload, payload
+    assert payload["body"] == "完整中文正文\n第二行链接 https://example.com"
+    assert payload["title"] == "测试标题"
+    assert payload["group"] == "GlobalIntel"
+
+
 def main():
     tests = [test_url, test_title, test_cluster, test_brief, test_fallback, test_render, test_bark_parse,
-             test_major_update, test_intra_digest_dedup, test_digest_message]
+             test_major_update, test_intra_digest_dedup, test_digest_message, test_bark_payload]
     for test in tests:
         test()
         print(f"OK {test.__name__}")

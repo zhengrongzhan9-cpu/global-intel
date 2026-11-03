@@ -1,0 +1,14 @@
+name = "global-intel-cron"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[triggers]
+crons = [
+  "7 1-11,13-23 * * *",
+  "20 0 * * *",
+  "20 12 * * *"
+]
+
+[vars]
+GITHUB_REPO = "zhengrongzhan9-cpu/global-intel"

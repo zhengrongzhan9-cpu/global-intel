@@ -40,7 +40,6 @@ class Bark:
             "body": body,
             "group": self.group,
             "level": level,
-            "markdown": "1",
         }
         try:
             resp = requests.post(endpoint, json=payload, timeout=25)
