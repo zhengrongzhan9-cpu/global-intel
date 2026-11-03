@@ -32,11 +32,25 @@ B. 对每条（合并后的）事件输出中文情报简报。
 3. 政治表述保持中立，不评价制度、不评价领导人、不使用情绪化形容词。
 4. summary 不超过 100 个汉字；background 不超过 140 个汉字；unverified 不超过 80 个汉字；没有未证实信息就写「暂无未证实信息」。
 5. 影响面要具体：国家用通用名（如 美国、中国、伊朗），行业用通用名（如 能源、半导体、航运），市场用（如 美股、A股、黄金、原油、美债）。
+5.1 interests 写 2-4 条「国家/主体：核心利益与筹码」，例如「伊朗：主权与威慑，筹码是霍尔木兹海峡」「美国：选举议程与航行自由，筹码是航母部署」。
 6. title_zh 不超过 40 个汉字，英文专有名词可保留。
 7. importance 为 0-10 的整数：10=开战/政权更迭/央行紧急行动；8-9=重大制裁、断供、市场熔断；6-7=重要政策或财报；5 以下=一般动态。
 
 只输出如下 JSON：
-{{"events":[{{"ids":[1,5],"title_zh":"","summary":"","background":"","impact":{{"countries":[],"sectors":[],"markets":[]}},"unverified":"","credibility":"高|中|低","importance":0,"category":"地缘政治|全球市场|宏观政策|贸易供应链|中国经济|科技能源|综合"}}]}}"""
+{{"events":[{{"ids":[1,5],"title_zh":"","summary":"","background":"","interests":["美国：...","伊朗：..."],"impact":{{"countries":[],"sectors":[],"markets":[]}},"unverified":"","credibility":"高|中|低","importance":0,"category":"地缘政治|全球市场|宏观政策|贸易供应链|中国经济|科技能源|综合"}}]}}"""
+
+DEEP_PROMPT = """今天是 {date}。以下 {count} 个事件是本期最重要的三条，请分别写一段深度分析。
+
+{events}
+
+每个事件输出 250-350 字，按以下结构写成一段连续文字（不要分点、不要 Markdown）：
+1. 起因链条：当前局面是怎么走到这一步的；
+2. 各方算计：主要参与方想要什么、怕什么、手里有什么筹码；
+3. 情景推演：基准情形、升级情形、缓和情形，各自的关键触发条件；
+4. 观察指标：未来 1-2 周最该盯的 2-3 个可验证信号。
+
+要求：推断必须以「（判断）」开头；不得编造伤亡数字、武器型号或未公开的会谈内容；不预测具体点位。
+只输出 JSON：{{"items":[{{"id":1,"analysis":"..."}}]}}"""
 
 OVERVIEW_PROMPT = """今天是 {date}。以下是过去 24 小时全球情报中评分最高的标题：
 
@@ -188,6 +202,57 @@ class LLM:
         return "\n".join(f"· {line}" for line in lines[:3])
 
 
+
+    def deep_dive(self, entries) -> dict:
+        if not self.enabled or not entries:
+            return {}
+        lines = []
+        for idx, (cluster, brief) in enumerate(entries, 1):
+            impact = brief.get("impact") or {}
+            lines.append(
+                json.dumps(
+                    {
+                        "id": idx,
+                        "title": brief.get("title_zh") or cluster.title,
+                        "summary": brief.get("summary", ""),
+                        "background": brief.get("background", ""),
+                        "interests": brief.get("interests", []),
+                        "impact": {
+                            "countries": impact.get("countries", []),
+                            "sectors": impact.get("sectors", []),
+                            "markets": impact.get("markets", []),
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+            )
+        content = self._chat(
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": DEEP_PROMPT.format(
+                        date=now_local().strftime("%Y-%m-%d"),
+                        count=len(entries),
+                        events="\n".join(lines),
+                    ),
+                },
+            ],
+            max_tokens=2400,
+        )
+        data = extract_json(content) or {}
+        out = {}
+        for item in data.get("items", []):
+            try:
+                idx = int(item.get("id"))
+            except Exception:
+                continue
+            if 1 <= idx <= len(entries):
+                text = _clip(item.get("analysis"), 420)
+                if text:
+                    out[entries[idx - 1][0].key] = text
+        return out
+
 def _clip(value, limit: int) -> str:
     text = str(value or "").strip().replace("\n", " ")
     if len(text) > limit:
@@ -221,6 +286,9 @@ def clean_brief(raw: dict, cluster) -> dict:
         "title_zh": _clip(raw.get("title_zh") or cluster.title, 60),
         "summary": _clip(raw.get("summary"), 110),
         "background": _clip(raw.get("background"), 160),
+        "interests": [
+            _clip(v, 40) for v in (raw.get("interests") or []) if str(v).strip()
+        ][:4],
         "impact": {
             "countries": as_list("countries"),
             "sectors": as_list("sectors"),
@@ -240,6 +308,7 @@ def fallback_brief(cluster) -> dict:
         "title_zh": _clip(cluster.title, 60),
         "summary": _clip(body, 100),
         "background": "规则模式生成，未调用 AI 交叉验证。",
+        "interests": [],
         "impact": {"countries": [], "sectors": [], "markets": []},
         "unverified": "未经 AI 核实，请以原文为准",
         "credibility": "低",

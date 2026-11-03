@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,8 +14,9 @@ from .crawl import run_crawler
 from .llm import LLM, fallback_brief
 from .relevance import is_relevant
 from .render import digest_messages, hourly_messages, render_text
+from .report import render_digest, write_digest, write_index
 from .store import Ledger, Store
-from .util import now_local, tz
+from .util import norm_title, now_local, similarity, tz
 from .wm import WorldMonitor
 
 log = logging.getLogger("intel")
@@ -65,6 +67,42 @@ def final_score(cluster, brief) -> float:
     except Exception:
         importance = 0.0
     return round(0.25 * (rule / 7 * 10) + 0.75 * importance, 1)
+
+
+def _match_prev(cluster, prev_events):
+    for prev in prev_events:
+        if prev["key"] == cluster.key:
+            return prev
+        if cluster.urls & prev["urls"]:
+            return prev
+    return None
+
+
+def _is_major_update(cluster, score, prev) -> bool:
+    if cluster.urls - prev["urls"]:
+        return True
+    return score >= float(prev.get("score") or 0) + 1.0
+
+
+
+def _duplicate_selected(cluster, brief, selected) -> bool:
+    """同一期内避免同一事件重复出现（语义合并漏网时兜底）。"""
+    title = norm_title(brief.get("title_zh") or "")
+    for other, other_brief, _score in selected:
+        if cluster.key == other.key or (cluster.urls & other.urls):
+            return True
+        if similarity(cluster.norm, other.norm) >= 0.92:
+            return True
+        if title and title == norm_title(other_brief.get("title_zh") or ""):
+            return True
+    return False
+
+def _derive_base() -> str:
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    if "/" in repo:
+        owner, name = repo.split("/", 1)
+        return f"https://{owner.lower()}.github.io/{name}"
+    return ""
 
 
 def build_parser():
@@ -194,7 +232,25 @@ def main(argv=None) -> int:
             if 4.5 <= e[2] < cfg.min_score
         ][: cfg.max_headlines]
     else:
-        selected = [e for e in events if e[2] >= cfg.digest_min_score][: cfg.digest_max]
+        prev_events = ledger.recent_digest_events(36)
+        selected = []
+        skipped = 0
+        for cluster, brief, score in events:
+            if score < cfg.digest_min_score:
+                continue
+            previous = _match_prev(cluster, prev_events)
+            if previous and not _is_major_update(cluster, score, previous):
+                skipped += 1
+                continue
+            if _duplicate_selected(cluster, brief, selected):
+                skipped += 1
+                continue
+            if previous:
+                brief["_update"] = True
+            selected.append([cluster, brief, score])
+            if len(selected) >= cfg.digest_max:
+                break
+        log.info("跨期去重：跳过 %s 件与上期重复且无重大进展的事件", skipped)
 
     stats = {
         "new": len(raw_items),
@@ -203,14 +259,30 @@ def main(argv=None) -> int:
         "events": len(events),
     }
     if not selected and not headlines:
+        if mode in ("morning", "evening") and not args.dry_run:
+            bark = Bark(cfg.bark_url, cfg.bark_group)
+            if bark.configured:
+                label = "☀️ 全球晨报" if mode == "morning" else "🌙 当日汇总"
+                ok = bark.send(
+                    f"{label} · {day}", "本期无重大新进展（与上期重复的事件已略过）。", "passive"
+                )
+                if ok:
+                    ledger.mark_digest(day, mode)
+                return 0 if ok else 1
         log.info("无达到阈值的事件，本次不推送")
         return 0
 
     overview = ""
     wm_note = ""
+    full_url = ""
     if mode in ("morning", "evening"):
         if llm.enabled and selected:
             overview = llm.overview([e[0] for e in selected])
+            deep = llm.deep_dive([(e[0], e[1]) for e in selected[:3]])
+            for cluster, brief, score in selected[:3]:
+                if deep.get(cluster.key):
+                    brief["deep_dive"] = deep[cluster.key]
+            log.info("深度分析：%s/%s 条", len(deep), min(3, len(selected)))
         if cfg.wm_key:
             wm = WorldMonitor(
                 cfg.wm_key, str(Path(cfg.data_dir, "wm_budget.json")), cfg.wm_daily_budget
@@ -219,10 +291,20 @@ def main(argv=None) -> int:
             if wm_note:
                 log.info("World Monitor 增强已获取")
 
+        html_text = render_digest(
+            mode, day, now.strftime("%Y-%m-%d %H:%M"), selected, overview, wm_note, stats
+        )
+        path = write_digest(cfg.repo_root, day, mode, html_text)
+        write_index(cfg.repo_root)
+        log.info("完整版已写入 %s（%s 字节）", path, len(html_text.encode("utf-8")))
+        base = cfg.public_base_url or _derive_base()
+        if base:
+            full_url = f"{base}/digests/{day}-{mode}.html"
+
     if mode == "hourly":
         messages = hourly_messages(selected, headlines, stats)
     else:
-        messages = digest_messages(mode, selected, overview, wm_note, stats)
+        messages = digest_messages(mode, selected, overview, wm_note, stats, full_url)
 
     bark = Bark(cfg.bark_url, cfg.bark_group)
     if args.dry_run or not bark.configured:
@@ -250,6 +332,7 @@ def main(argv=None) -> int:
     for cluster, brief, score in selected:
         ledger.mark_pushed(cluster.key, cluster_urls(cluster), [cluster.title], score, mode, day)
     if mode in ("morning", "evening"):
+        ledger.record_digest_events(day, mode, selected)
         ledger.mark_digest(day, mode)
     ledger.meta_set("last_success", now.strftime("%Y-%m-%d %H:%M:%S"))
     log.info("推送完成：%s 条消息，%s 个事件", len(messages), len(selected))

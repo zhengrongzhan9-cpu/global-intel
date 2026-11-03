@@ -8,7 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from intel.bark import Bark
 from intel.cluster import build_clusters, merge_clusters
 from intel.llm import clean_brief, fallback_brief
-from intel.render import hourly_messages
+from intel.render import digest_messages, hourly_messages
+from intel.run import _duplicate_selected, _is_major_update
 from intel.util import canon_url, norm_title, similarity
 
 
@@ -89,8 +90,56 @@ def test_bark_parse():
     assert Bark("https://bark.example.com/xyz/").key == "xyz"
 
 
+
+def test_major_update():
+    class C:
+        key = "k"
+        urls = {"https://a"}
+
+    prev = {"key": "k", "urls": {"https://a"}, "score": 5.0}
+    assert _is_major_update(C(), 4.0, prev) is False
+    assert _is_major_update(C(), 6.2, prev) is True
+
+    class C2:
+        key = "k2"
+        urls = {"https://a", "https://b"}
+
+    assert _is_major_update(C2(), 5.0, prev) is True
+
+
+def test_intra_digest_dedup():
+    class C:
+        def __init__(self, key, url, norm):
+            self.key, self.urls, self.norm = key, {url}, norm
+
+    first = C("a", "https://a", "iranstrikesqeshm")
+    second = C("b", "https://b", "iranstrikesqeshmisland")
+    brief = {"title_zh": "美媒称美军打击伊朗格什姆岛"}
+    selected = [[first, brief, 8.0]]
+    assert _duplicate_selected(second, brief, selected) is True
+    other = C("c", "https://c", "europecoldstoragecyberattack")
+    assert _duplicate_selected(other, {"title_zh": "欧洲冷柜网络攻击"}, selected) is False
+
+
+def test_digest_message():
+    class C:
+        key = "k"
+        title = "标题"
+        sources = ["BBC World"]
+        urls = {"https://x"}
+        latest_pub = None
+        last_at = None
+        items = []
+
+    brief = {"title_zh": "测试标题", "summary": "一句摘要。"}
+    messages = digest_messages("morning", [[C(), brief, 8.0]], "", "", {"new": 1}, "https://example.com/d.html")
+    assert messages and "https://example.com/d.html" in messages[0][1]
+    assert len(messages[0][1].encode("utf-8")) < 3400
+
+
 def main():
-    tests = [test_url, test_title, test_cluster, test_brief, test_fallback, test_render, test_bark_parse]
+    tests = [test_url, test_title, test_cluster, test_brief, test_fallback, test_render, test_bark_parse,
+             test_major_update, test_intra_digest_dedup, test_digest_message]
     for test in tests:
         test()
         print(f"OK {test.__name__}")

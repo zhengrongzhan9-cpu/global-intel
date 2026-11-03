@@ -93,36 +93,31 @@ def hourly_messages(entries, headline_items, stats: dict):
     return _pack(title, blocks, footer)
 
 
-def digest_messages(kind: str, entries, overview: str, wm_note: str, stats: dict):
+def digest_messages(kind: str, entries, overview: str, wm_note: str, stats: dict, full_url: str = ""):
+    """Bark 只发可读摘要 + 完整版链接，完整内容在 HTML 页面。"""
     now = now_local()
     if kind == "morning":
         title = f"☀️ 全球晨报 · {now.strftime('%m-%d')}"
-        head = f"过去 24 小时重点 {len(entries)} 条"
+        label = "晨报"
     else:
         title = f"🌙 当日汇总 · {now.strftime('%m-%d')}"
-        head = f"今日重点 {len(entries)} 条"
+        label = "晚报"
 
-    blocks = [head]
-    if overview:
-        blocks.append("🧭 今日主线\n" + overview)
-    if wm_note:
-        blocks.append("🛰 World Monitor\n" + wm_note)
+    blocks = [f"{label}精选 {len(entries)} 件"]
+    for index, (cluster, brief, score) in enumerate(entries, 1):
+        star = "★ " if index <= 3 else ""
+        line = f"{index}. {star}{brief.get('title_zh') or cluster.title}"
+        summary = (brief.get("summary") or "").strip()
+        if summary:
+            line += "\n" + summary[:58]
+        blocks.append(line)
 
-    grouped = {}
-    for cluster, brief, score in entries:
-        grouped.setdefault(brief.get("category", "综合"), []).append((cluster, brief, score))
-
-    order = ["地缘政治", "全球市场", "宏观政策", "贸易供应链", "中国经济", "科技能源", "综合"]
-    for category in order:
-        items = grouped.get(category)
-        if not items:
-            continue
-        blocks.append(f"【{category}】")
-        for cluster, brief, score in items:
-            blocks.append(event_block(cluster, brief, score))
-
-    footer = f"扫描 {stats.get('new', 0)} 条新增 · 公开信息，不构成投资建议"
-    return _pack(title, blocks, footer)
+    if full_url:
+        footer = "📖 完整版（背景 / 国家利益 / 影响 / 深度分析）\n" + full_url
+    else:
+        footer = "完整版页面未配置"
+    messages = _pack(title, blocks, footer)
+    return messages
 
 
 def render_text(entries, stats: dict) -> str:

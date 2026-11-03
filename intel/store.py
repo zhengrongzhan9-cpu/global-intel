@@ -115,6 +115,9 @@ class Ledger:
             create table if not exists digests (
                 date text, kind text, sent_at text, primary key(date, kind));
             create table if not exists meta (k text primary key, v text);
+            create table if not exists digest_events (
+                key text, kind text, date text, title text, urls text, score real, sent_at text,
+                primary key (key, date, kind));
             """
         )
         self.conn.commit()
@@ -189,4 +192,47 @@ class Ledger:
         self.conn.execute(
             "insert or replace into meta(k, v) values (?,?)", (key, str(value))
         )
+        self.conn.commit()
+
+    def recent_digest_events(self, hours: float = 36.0):
+        since = (datetime.now() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+        rows = self.conn.execute(
+            "select key, title, urls, score, date, kind, sent_at from digest_events where sent_at >= ?",
+            (since,),
+        ).fetchall()
+        out = []
+        for key, title, urls, score, date, kind, sent_at in rows:
+            try:
+                url_list = json.loads(urls or "[]")
+            except Exception:
+                url_list = []
+            out.append(
+                {
+                    "key": key,
+                    "title": title,
+                    "urls": set(url_list),
+                    "score": score or 0.0,
+                    "date": date,
+                    "kind": kind,
+                    "sent_at": sent_at,
+                }
+            )
+        return out
+
+    def record_digest_events(self, day: str, kind: str, entries):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for cluster, brief, score in entries:
+            self.conn.execute(
+                "insert or replace into digest_events(key, kind, date, title, urls, score, sent_at) "
+                "values (?,?,?,?,?,?,?)",
+                (
+                    cluster.key,
+                    kind,
+                    day,
+                    cluster.title[:200],
+                    json.dumps(sorted(cluster.urls), ensure_ascii=False),
+                    float(score),
+                    now,
+                ),
+            )
         self.conn.commit()

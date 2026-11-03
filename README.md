@@ -21,9 +21,9 @@ GitHub Actions（每小时 :07 + 08:20 / 20:20 KL）
         │      └─ 推送台账（SQLite，防重复）
         │
         └─ Bark 推送（≤3.4KB 自动分批）
-               ├─ 每小时：≥8 分立即推，6-8 分合并推
-               ├─ 08:30：全球晨报（过去 24h Top 10）
-               └─ 20:30：当日汇总
+               ├─ 每小时：≥7.5 分立即推，5-7.5 分合并推
+               ├─ 08:30：全球晨报（10-14 件 + Top3 深度 + 完整版链接）
+               └─ 20:30：当日汇总（与晨报跨期去重，只报新进展）
 ```
 
 ## 目录
@@ -35,6 +35,8 @@ GitHub Actions（每小时 :07 + 08:20 / 20:20 KL）
 | `config/frequency_words.txt` | 六大类关键词（地缘/市场/宏观/贸易/中国/科技） |
 | `config/intel.yaml` | 评分阈值、条数上限、模型参数 |
 | `intel/` | 分析层：过滤、聚类、LLM、渲染、Bark、台账 |
+| `intel/report.py` | 生成 GitHub Pages 上的完整版 HTML |
+| `docs/digests/` | 已发布的晨报/晚报页面（由 Actions 自动提交） |
 | `.github/workflows/intel.yml` | 定时任务 |
 | `dsh/worldmonitor.cordis.yml` | DSH 的 World Monitor MCP 接入配置 |
 
@@ -62,6 +64,15 @@ GitHub Actions（每小时 :07 + 08:20 / 20:20 KL）
 | 20:20 触发 | 20:30 前发出当日汇总 | `20 12 * * *` |
 
 GitHub Actions 的实际启动通常延迟 5–15 分钟，这是平台特性，无法消除。
+
+## 早晚报
+
+- **10-14 件**精选，按综合评分排序，不达标不凑数；少于此数就少发。
+- 每件包含：事实摘要、背景、涉及的**国家与利益关系**、对市场/格局的影响、未证实信息与可信度。
+- **最重要的 3 件**额外生成 250-350 字深度分析（起因链条 / 各方算计 / 三种情景 / 观察指标）。
+- 手机只收「标题 + 一句话摘要 + 完整版链接」，完整内容在 GitHub Pages：
+  `https://zhengrongzhan9-cpu.github.io/global-intel/digests/YYYY-MM-DD-morning.html`
+- 晚报与晨报去重：同一事件若没有新增来源、评分也未显著上升，就不再重复。
 
 ## 评分
 

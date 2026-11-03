@@ -5,15 +5,15 @@ push:
   max_briefs: 5           # 每小时最多几条简报
   max_headlines: 6        # 每小时最多几条快讯
   max_candidates: 60      # 单次最多分析多少个事件（控制 token）
-  digest_min_score: 4.0   # 晨报/日报入选门槛
-  digest_max: 10          # 晨报/日报最多几条
+  digest_min_score: 5.0   # 晨报/日报入选门槛
+  digest_max: 14          # 晨报/日报最多几条
 
 llm:
   api_base: "https://api.deepseek.com/v1"
   model: "deepseek-chat"
   timeout: 120
   max_calls: 4            # 小时扫描最多 4 次调用（约 32 个事件）
-  max_calls_digest: 8     # 晨报/日报最多 8 次调用（约 64 个事件）
+  max_calls_digest: 10     # 晨报/日报最多 8 次调用（约 64 个事件）
 
 wm:
   daily_budget: 5         # World Monitor 免费账户额度
@@ -21,3 +21,6 @@ wm:
 crawl:
   timeout: 900
   retries: 2
+
+report:
+  public_base_url: ""   # 留空则从 GITHUB_REPOSITORY 推导 GitHub Pages 地址

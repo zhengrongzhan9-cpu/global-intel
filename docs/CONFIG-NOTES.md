@@ -73,13 +73,22 @@ World Bank（404）、OECD（403）、ECB（证书链不完整）、财新/第�
 | 表 | 用途 |
 |---|---|
 | `pushed` | 已推送事件指纹、分数、时间 |
+| `digest_events` | 早晚报已报道事件（跨期去重依据） |
 | `pushed_urls` | 已推送 URL（防同文不同标题） |
 | `seen` | AI 简报缓存（省 token） |
 | `digests` | 早晚报发送状态（每天各一次） |
 | `meta` | 最近成功时间等 |
 
-## 调整建议
+## 早晚报参数
 
-- 太吵：调高 `push.min_score` 到 7，或把 `push.max_briefs` 降到 3。
-- 漏报：调低 `push.min_score` 到 5，或提高 `ai_filter` 无关。
-- 省钱：把 `llm.max_calls` 设为 2，`push.max_candidates` 设为 40。
+| 参数 | 默认 | 说明 |
+|---|---|---|
+| `push.digest_min_score` | 5.0 | 入选最低分，不凑数 |
+| `push.digest_max` | 14 | 单期最多事件数 |
+| `llm.max_calls_digest` | 10 | 8 批分析 + 今日主线 + 深度分析 |
+| `report.public_base_url` | 空 | 留空则由 `GITHUB_REPOSITORY` 推导 Pages 地址 |
+
+跨期去重规则：同一事件若 URL 集合未扩大、且评分未比上期提高 1.0 以上，则跳过；
+因此“新的信源跟进”或“评分显著上升”会作为新进展再次报道。
+
+## 调整建议

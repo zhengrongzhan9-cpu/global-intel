@@ -16,15 +16,15 @@ DEFAULTS = {
         "max_briefs": 5,
         "max_headlines": 6,
         "max_candidates": 60,
-        "digest_min_score": 4.0,
-        "digest_max": 10,
+        "digest_min_score": 5.0,
+        "digest_max": 14,
     },
     "llm": {
         "api_base": "https://api.deepseek.com/v1",
         "model": "deepseek-chat",
         "timeout": 120,
         "max_calls": 4,
-        "max_calls_digest": 8,
+        "max_calls_digest": 10,
     },
     "wm": {"daily_budget": 5},
     "crawl": {"timeout": 900, "retries": 2},
@@ -42,18 +42,19 @@ class Settings:
     llm_model: str = "deepseek-chat"
     llm_timeout: int = 120
     llm_max_calls: int = 4
-    llm_max_calls_digest: int = 8
+    llm_max_calls_digest: int = 10
     min_score: float = 6.0
     priority_score: float = 8.0
     max_briefs: int = 5
     max_headlines: int = 6
     max_candidates: int = 60
     digest_min_score: float = 5.0
-    digest_max: int = 10
+    digest_max: int = 14
     wm_key: str = ""
     wm_daily_budget: int = 5
     crawl_timeout: int = 900
     crawl_retries: int = 2
+    public_base_url: str = ""
     repo_root: Path = field(default_factory=lambda: Path("."))
 
 
@@ -102,5 +103,6 @@ def load(repo_root: str | None = None) -> Settings:
         wm_daily_budget=int(os.environ.get("WM_DAILY_BUDGET", wm.get("daily_budget", 5))),
         crawl_timeout=int(crawl.get("timeout", 900)),
         crawl_retries=int(crawl.get("retries", 2)),
+        public_base_url=(os.environ.get("PUBLIC_BASE_URL") or cfg.get("report", {}).get("public_base_url", "")).rstrip("/"),
         repo_root=root,
     )
