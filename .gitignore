@@ -20,7 +20,7 @@ __pycache__/
 .env.local
 
 # TrendRadar 运行期在根目录生成的网页快照
-index.html
+/index.html
 
 # 本地凭证草稿
 PAT.txt
