@@ -1,0 +1,268 @@
+# TrendRadar 配置 · 全球金融/政治/地缘情报系统
+# 时区 Asia/Kuala_Lumpur；本配置只负责采集，推送由 intel 层统一处理。
+# 上游版本 v6.11.0，修改项见 docs/CONFIG-NOTES.md
+app:
+  timezone: Asia/Kuala_Lumpur
+  show_version_update: false
+schedule:
+  enabled: false
+  preset: always_on
+platforms:
+  enabled: true
+  api_url: ''
+  sources:
+  - id: toutiao
+    name: 今日头条
+    expected_domain: toutiao.com
+  - id: baidu
+    name: 百度热搜
+    expected_domain: baidu.com
+  - id: wallstreetcn-hot
+    name: 华尔街见闻
+    expected_domain: wallstreetcn.com
+  - id: thepaper
+    name: 澎湃新闻
+    expected_domain: thepaper.cn
+  - id: cls-hot
+    name: 财联社热门
+    expected_domain: cls.cn
+  - id: ifeng
+    name: 凤凰网
+    expected_domain: ifeng.com
+  - id: weibo
+    name: 微博
+    expected_domain: weibo.com
+  - id: zhihu
+    name: 知乎
+    expected_domain: zhihu.com
+rss:
+  enabled: true
+  freshness_filter:
+    enabled: true
+    max_age_days: 2
+  feeds:
+  - id: aljazeera
+    name: Al Jazeera
+    url: https://www.aljazeera.com/xml/rss/all.xml
+  - id: bbc-world
+    name: BBC World
+    url: https://feeds.bbci.co.uk/news/world/rss.xml
+  - id: guardian-world
+    name: Guardian World
+    url: https://www.theguardian.com/world/rss
+  - id: scmp-china
+    name: SCMP China
+    url: https://www.scmp.com/rss/4/feed
+  - id: nikkei-asia
+    name: Nikkei Asia
+    url: https://asia.nikkei.com/rss/feed/nar
+  - id: ft-world
+    name: FT World
+    url: https://www.ft.com/world?format=rss
+  - id: un-news
+    name: UN News
+    url: https://news.un.org/feed/subscribe/en/news/all/rss.xml
+  - id: crisisgroup
+    name: Crisis Group
+    url: https://www.crisisgroup.org/rss
+  - id: foreignpolicy
+    name: Foreign Policy
+    url: https://foreignpolicy.com/feed/
+  - id: politico-eu
+    name: Politico EU
+    url: https://www.politico.eu/feed/
+  - id: euronews
+    name: Euronews
+    url: https://www.euronews.com/rss?level=theme&name=news
+  - id: dw-world
+    name: DW World
+    url: https://rss.dw.com/rdf/rss-en-world
+  - id: straitstimes-asia
+    name: Straits Times Asia
+    url: https://www.straitstimes.com/news/asia/rss.xml
+  - id: japantimes
+    name: Japan Times
+    url: https://www.japantimes.co.jp/feed/
+  - id: cnbc-world
+    name: CNBC World
+    url: https://www.cnbc.com/id/100727362/device/rss/rss.html
+  - id: cnbc-markets
+    name: CNBC Markets
+    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+  - id: marketwatch
+    name: MarketWatch
+    url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+  - id: investing-commodities
+    name: Investing Commodities
+    url: https://www.investing.com/rss/news_11.rss
+  - id: investing-forex
+    name: Investing Forex
+    url: https://www.investing.com/rss/news_1.rss
+  - id: fed-press
+    name: Federal Reserve
+    url: https://www.federalreserve.gov/feeds/press_all.xml
+  - id: boj
+    name: Bank of Japan
+    url: https://www.boj.or.jp/en/rss/whatsnew.xml
+  - id: xinhua-world
+    name: Xinhua World
+    url: http://www.xinhuanet.com/world/news_world.xml
+  - id: techcrunch
+    name: TechCrunch
+    url: https://techcrunch.com/feed/
+  - id: theverge
+    name: The Verge
+    url: https://www.theverge.com/rss/index.xml
+  - id: arstechnica
+    name: Ars Technica
+    url: https://feeds.arstechnica.com/arstechnica/index
+  - id: semianalysis
+    name: SemiAnalysis
+    url: https://semianalysis.com/feed/
+  - id: oilprice
+    name: OilPrice
+    url: https://oilprice.com/rss/main
+  - id: eia
+    name: EIA Today in Energy
+    url: https://www.eia.gov/rss/todayinenergy.xml
+  - id: mining
+    name: Mining.com
+    url: https://www.mining.com/feed/
+report:
+  mode: incremental
+  display_mode: keyword
+  sort_by_position_first: false
+  rank_threshold: 5
+  max_news_per_keyword: 8
+filter:
+  method: keyword
+  priority_sort_enabled: true
+ai_filter:
+  batch_size: 200
+  batch_interval: 2
+  min_score: 0.7
+  reclassify_threshold: 0.6
+  prompt_file: prompt.txt
+  extract_prompt_file: extract_prompt.txt
+  update_tags_prompt_file: update_tags_prompt.txt
+display:
+  region_order:
+  - new_items
+  - hotlist
+  - rss
+  - standalone
+  - ai_analysis
+  regions:
+    hotlist: true
+    new_items: false
+    rss: true
+    standalone: false
+    ai_analysis: false
+  standalone:
+    platforms: []
+    rss_feeds: []
+    max_items: 20
+notification:
+  enabled: false
+  channels:
+    feishu:
+      webhook_url: ''
+    dingtalk:
+      webhook_url: ''
+    wework:
+      webhook_url: ''
+      msg_type: markdown
+    telegram:
+      bot_token: ''
+      chat_id: ''
+    email:
+      from: ''
+      password: ''
+      to: ''
+      smtp_server: ''
+      smtp_port: ''
+    ntfy:
+      server_url: https://ntfy.sh
+      topic: ''
+      token: ''
+    bark:
+      url: ''
+    slack:
+      webhook_url: ''
+    generic_webhook:
+      webhook_url: ''
+      payload_template: ''
+storage:
+  backend: local
+  formats:
+    sqlite: true
+    txt: false
+    html: true
+  local:
+    data_dir: output
+    retention_days: 7
+  remote:
+    retention_days: 0
+    endpoint_url: ''
+    bucket_name: ''
+    access_key_id: ''
+    secret_access_key: ''
+    region: ''
+  pull:
+    enabled: false
+    days: 7
+ai:
+  model: deepseek/deepseek-chat
+  api_key: ''
+  api_base: ''
+  timeout: 120
+  temperature: 1.0
+  max_tokens: 5000
+  num_retries: 1
+  fallback_models: []
+ai_analysis:
+  enabled: false
+  language: Chinese
+  prompt_file: ai_analysis_prompt.txt
+  mode: follow_report
+  max_news_for_analysis: 150
+  include_rss: false
+  include_standalone: true
+  include_rank_timeline: true
+ai_translation:
+  enabled: false
+  language: 中文
+  prompt_file: ai_translation_prompt.txt
+  batch_size: 100
+  batch_interval: 2
+  scope:
+    hotlist: false
+    rss: true
+    standalone: true
+advanced:
+  debug: false
+  version_check_url: https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version
+  mcp_version_check_url: https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version_mcp
+  configs_version_check_url: https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version_configs
+  crawler:
+    request_interval: 800
+    use_proxy: false
+    default_proxy: http://127.0.0.1:10801
+  rss:
+    request_interval: 300
+    timeout: 20
+    use_proxy: false
+    proxy_url: ''
+  weight:
+    rank: 0.6
+    frequency: 0.3
+    hotness: 0.1
+  max_accounts_per_channel: 3
+  batch_size:
+    default: 4000
+    dingtalk: 20000
+    feishu: 30000
+    bark: 4000
+    slack: 4000
+  batch_send_interval: 3
+  feishu_message_separator: ━━━━━━━━━━━━━━━━

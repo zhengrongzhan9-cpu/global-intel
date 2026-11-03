@@ -1,0 +1,26 @@
+# World Monitor MCP 接入 DSH
+#
+# 用法一（临时，推荐先试）：
+#   $env:WM_KEY="wm_你的密钥"
+#   dsh web --patch F:\news\dsh\worldmonitor.cordis.yml
+#
+# 用法二（持久，仅对某个 profile 生效）：
+#   把下面的 insert 块合并进 $DSH_HOME\profiles\<name>\cordis.patch.yml
+#   不要把密钥写进 YAML，始终用环境变量 WM_KEY。
+#
+# 加载后模型会看到 mcp__worldmonitor__* 工具（共 100 个，tools/list 无需密钥）。
+# 注意：免费账户每天只有 5 次 tools/call 额度；未设置 WM_KEY 时工具可见但调用返回 401。
+
+- insert:
+    - id: mcp-worldmonitor
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: worldmonitor
+        transport: streamable-http
+        url: https://worldmonitor.app/mcp
+        headers:
+          X-WorldMonitor-Key: !!js process.env.WM_KEY
+        toolCallTimeoutMs: 60000
+        failOnStartupError: false
+        reconnect:
+          enabled: true

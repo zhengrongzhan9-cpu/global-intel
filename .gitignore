@@ -1,0 +1,27 @@
+# 运行时数据
+output/
+data/
+logs/
+
+# 本地环境
+.venv/
+vendor/TrendRadar/.venv/
+__pycache__/
+*.pyc
+
+# 工具与缓存
+.tools/
+.uv-cache/
+.uv-python/
+.uv-tools/
+
+# 本地密钥
+.env
+.env.local
+
+# TrendRadar 运行期在根目录生成的网页快照
+index.html
+
+# 本地凭证草稿
+PAT.txt
+.env

@@ -1,0 +1,23 @@
+# intel 分析层配置（密钥一律走环境变量 / GitHub Secrets）
+push:
+  min_score: 5.0          # 进入推送的最低综合评分
+  priority_score: 7.5     # 达到此分数立即优先推送
+  max_briefs: 5           # 每小时最多几条简报
+  max_headlines: 6        # 每小时最多几条快讯
+  max_candidates: 60      # 单次最多分析多少个事件（控制 token）
+  digest_min_score: 4.0   # 晨报/日报入选门槛
+  digest_max: 10          # 晨报/日报最多几条
+
+llm:
+  api_base: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  timeout: 120
+  max_calls: 4            # 小时扫描最多 4 次调用（约 32 个事件）
+  max_calls_digest: 8     # 晨报/日报最多 8 次调用（约 64 个事件）
+
+wm:
+  daily_budget: 5         # World Monitor 免费账户额度
+
+crawl:
+  timeout: 900
+  retries: 2

@@ -1,0 +1,91 @@
+name: Global Intel
+
+on:
+  schedule:
+    # 每小时 :07（KL 09:07-19:07 与 21:07-07:07）；08/20 点留给早晚报
+    - cron: "7 1-11,13-23 * * *"
+    # 08:20 KL -> 08:30 前发出晨报（GitHub 通常延迟 5-15 分钟）
+    - cron: "20 0 * * *"
+    # 20:20 KL -> 20:30 前发出当日汇总
+    - cron: "20 12 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "运行模式"
+        type: choice
+        default: auto
+        options: [auto, hourly, morning, evening]
+
+concurrency:
+  group: global-intel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  intel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e vendor/TrendRadar --no-deps
+
+      - name: Self test
+        run: python scripts/selftest.py
+
+      - name: Restore data
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            output
+            data
+          key: intel-data-${{ github.run_id }}
+          restore-keys: intel-data-
+
+      - name: Run pipeline
+        env:
+          BARK_URL: ${{ secrets.BARK_URL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AI_API_BASE: ${{ secrets.AI_API_BASE }}
+          AI_MODEL: ${{ secrets.AI_MODEL }}
+          WM_KEY: ${{ secrets.WM_KEY }}
+          MODE: ${{ inputs.mode || 'auto' }}
+        run: |
+          python -m intel.run --mode "$MODE"
+
+      - name: Prune old files
+        if: always()
+        run: |
+          find output -type f -mtime +9 -delete 2>/dev/null || true
+          find data/logs -type f -mtime +3 -delete 2>/dev/null || true
+
+      - name: Save data
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            output
+            data
+          key: intel-data-${{ github.run_id }}
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-logs-${{ github.run_id }}
+          path: data/logs/
+          retention-days: 7

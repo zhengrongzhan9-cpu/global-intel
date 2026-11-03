@@ -1,0 +1,134 @@
+# TrendRadar 关键词 · 全球金融/政治/地缘情报
+# 语法：[组名] 分组；/正则/ => 别名；+必须词；!排除词
+# 说明：本文件主要影响 TrendRadar 的 HTML 报告分组；
+#       intel 分析层会读取全部新增条目并自行评分，不受此处限制。
+
+[GLOBAL_FILTER]
+震惊
+明星
+八卦
+综艺
+选秀
+彩票
+/广告|带货|优惠券/
+
+[WORD_GROUPS]
+
+# ── 地缘政治与军事冲突 ─────────────────────────────────────────
+[地缘政治与军事]
+战争
+冲突
+军事
+空袭
+导弹
+无人机
+停火
+谈判
+制裁
+封锁
+演习
+政变
+核武
+领土
+边境
+海峡
+外交
+断交
+峰会
+大选
+难民
+/\b(war|conflict|airstrike|missile|drone|ceasefire|sanction|invasion|troops|coup|nuclear|nato|blockade|strait|summit|election)\b/
+
+# ── 全球市场 ───────────────────────────────────────────────────
+[全球市场]
+美联储
+FOMC
+降息
+加息
+利率
+通胀
+CPI
+国债
+收益率
+美元
+黄金
+白银
+原油
+布伦特
+股市
+暴跌
+暴涨
+熔断
+熊市
+牛市
+央行
+债券
+/\b(fed|fomc|rate cut|rate hike|inflation|cpi|treasury|yield|dollar|gold|oil|brent|stocks|bond|recession)\b/
+
+# ── 宏观与央行政策 ─────────────────────────────────────────────
+[宏观政策]
+GDP
+PMI
+就业
+非农
+失业率
+财政
+赤字
+债务
+降准
+宽松
+紧缩
+经济衰退
+/\b(gdp|pmi|payroll|unemployment|fiscal|deficit|debt|stimulus|recession|ecb|boj|pboc)\b/
+
+# ── 贸易、制裁与供应链 ─────────────────────────────────────────
+[贸易与供应链]
+关税
+贸易战
+出口管制
+制裁
+供应链
+航运
+港口
+红海
+苏伊士
+霍尔木兹
+稀土
+能源
+天然气
+管道
+/\b(tariff|trade war|export control|supply chain|shipping|red sea|suez|hormuz|rare earth|pipeline|lng)\b/
+
+# ── 中国与 A 股/港股 ───────────────────────────────────────────
+[中国经济与市场]
+A股
+港股
+人民币
+央行
+降准
+楼市
+房地产
+地方债
+证监会
+北向资金
+制造业
+出口
+/\b(china|yuan|renminbi|hong kong|a-share|pboc|property|evergrande)\b/
+
+# ── 科技、AI 与新能源 ─────────────────────────────────────────
+[科技与能源]
+人工智能
+大模型
+算力
+芯片
+半导体
+英伟达
+台积电
+光刻机
+数据中心
+新能源
+光伏
+储能
+电动车
+锂电
+/\b(ai|artificial intelligence|llm|chip|semiconductor|nvidia|tsmc|lithography|data center|solar|battery|ev)\b/
