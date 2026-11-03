@@ -21,15 +21,26 @@
 | DSH MCP 能力 | 官方文档 + 内置 SDK | 支持 `streamable-http` + 自定义 headers，已生成 overlay |
 | RSS 可达性 | 29 个源逐个请求 | 28 个返回 RSS/Atom |
 
-## 尚未验证（需要你的输入）
+## 真机与云端验证（2026-11-03 15:16-15:26）
+
+| 项 | 结果 |
+|---|---|
+| Bark 真机连通 | `--test-push` 成功，iPhone 收到「✅ 全球情报推送测试」 |
+| DeepSeek Key | `chat/completions` 返回 200（实际模型 `deepseek-flash`） |
+| 本地真实推送 | 15:20 发出 2 条消息 / 6 个事件，全部 200 |
+| GitHub 仓库 | `zhengrongzhan9-cpu/global-intel`（public，152 文件 2.5MB） |
+| Actions hourly | run `41595827704` success：534 条采集 → 343 事件 → 31 条 AI → 2 条推送 / 6 事件 |
+| Actions morning | run `41596118748` success：690 条采集 → 549 相关 → 14 条 AI → 3 条推送 / 10 事件 |
+| 数据缓存 | Restore/Save data 均 success，去重台账跨运行保留 |
+| Secrets | `BARK_URL`、`AI_API_KEY` 已写入，日志中均以 `***` 脱敏 |
+
+## 尚未验证
 
 | 项 | 阻塞原因 |
 |---|---|
-| iPhone 真实 Bark 推送 | 缺 `BARK_URL` |
-| GitHub Actions 端到端 | 缺仓库与 PAT |
-| LLM 五段式简报 | 缺 `AI_API_KEY`（代码路径与 JSON 校验已单测） |
 | World Monitor 实时数据 | 免费账户为交互式 OAuth；需 `wm_` Key 或 Pro |
 | DSH 加载 MCP 后的工具调用 | 需重启 DSH 并设置 `WM_KEY` |
+| 20:30 定时日报 | 需等到当晚 20:20 KL 的 cron 触发（代码路径已用 `mode=evening` 验证） |
 
 ## 已验证的免费额度事实
 

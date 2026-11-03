@@ -50,7 +50,7 @@ World Bank（404）、OECD（403）、ECB（证书链不完整）、财新/第�
   +1.0  市场冲击词（plunge/crash/default/暴跌/熔断/违约…）
   +0.5  央行 + 利率动作同时出现
 
-综合分 = 0.4 × (规则分 / 7 × 10) + 0.6 × 模型 importance
+综合分 = 0.25 × (规则分 / 7 × 10) + 0.75 × 模型 importance
 ```
 
 无 AI Key 时：综合分 = 规则分 / 7 × 10，且只推送 ≥ `priority_score` 的事件。
@@ -59,12 +59,14 @@ World Bank（404）、OECD（403）、ECB（证书链不完整）、财新/第�
 
 | 参数 | 值 | 位置 |
 |---|---|---|
-| 字面聚类阈值 | 0.62 | `intel/cluster.py: MERGE_THRESHOLD` |
+| 字面聚类阈值 | 0.55 | `intel/cluster.py: MERGE_THRESHOLD` |
 | 英文 token 权重 | 0.95 | 同上 `_sim` |
 | 中文 bigram Jaccard | 直接比较 | 同上 `_grams` |
+| 国家+动作实体规则 | 0.72 | 同上 `_sim`（如 iran + strikes 直接合并） |
+| 撇号归一化 | `iran's` = `iran` | 同上 `_tokens` |
 | 语义合并 | LLM `ids` 数组 | `intel/llm.py: ANALYZE_PROMPT` |
 | 简报缓存 | 20 小时 | `intel/store.py: cached_brief` |
-| RSS 发布时间下限 | 窗口起点 -2h | `intel/run.py` |
+| RSS 发布时间下限 | 窗口起点 -12h | `intel/run.py` |
 
 ## 台账结构（data/state.db）
 
