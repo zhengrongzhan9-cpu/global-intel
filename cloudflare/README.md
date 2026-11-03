@@ -31,7 +31,8 @@ python cloudflare\deploy.py
 1. `GET /health` 返回 crons。
 2. `GET /trigger?mode=hourly` 带 `X-Trigger-Key`，应返回 204 并出现一次 GitHub workflow_dispatch。
 3. 检查 GitHub run 成功、Bark 正文正常、Pages 链接正常。
-4. 全部通过后再移除 `.github/workflows/intel.yml` 里的 `schedule`，避免重复触发。
+4. 已验证：Cloudflare 定时事件 → workflow_dispatch → 工作流成功 → Bark 正文正常。
+5. 已移除 `.github/workflows/intel.yml` 里的 `schedule`，只保留 `workflow_dispatch`；定时完全由 Cloudflare 负责。
 
 ## 本地测试
 

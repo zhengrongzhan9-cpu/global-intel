@@ -1,13 +1,6 @@
 name: Global Intel
 
 on:
-  schedule:
-    # 每小时 :07（KL 09:07-19:07 与 21:07-07:07）；08/20 点留给早晚报
-    - cron: "7 1-11,13-23 * * *"
-    # 08:20 KL -> 08:30 前发出晨报（GitHub 通常延迟 5-15 分钟）
-    - cron: "20 0 * * *"
-    # 20:20 KL -> 20:30 前发出当日汇总
-    - cron: "20 12 * * *"
   workflow_dispatch:
     inputs:
       mode:
